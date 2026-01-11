@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# LaTeX intermediate files
+*.aux
+*.bbl
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.log
+*.lof
+*.lot
+*.out
+*.toc
+*.synctex.gz
+*.nav
+*.snm
+*.xdv
+*.dvi
+*.bcf
+*.run.xml
+*_minted*
+_build/
+build/

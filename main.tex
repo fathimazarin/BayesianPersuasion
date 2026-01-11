@@ -1,0 +1,198 @@
+\documentclass{article}
+
+\usepackage{amsmath, amsthm, amssymb}
+\usepackage{graphicx}
+\usepackage{verbatim}
+\usepackage{natbib}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyvrb}
+\usepackage{enumerate}
+\usepackage{relsize}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{multirow}
+
+\usepackage{hyperref}
+\usepackage[margin=1.5in]{geometry}
+\hypersetup{colorlinks,citecolor=blue,urlcolor=blue,linkcolor=blue}
+
+\usepackage{tikz}
+\allowdisplaybreaks
+\usetikzlibrary{graphs}
+\usetikzlibrary{arrows.meta}
+
+\usepackage{notations}
+\graphicspath{{./figures/}}
+
+\algrenewcommand\Require{\State \textbf{Require: }}
+\newcommand{\Data}{\State \textbf{Data: }}
+\newcommand{\Output}{\State \textbf{Output: }}
+
+%\numberwithin{equation}{section}
+
+\newcommand{\bZmu}{\widebar{Z\mu}}
+\newcommand{\alg}{\text{alg}}
+
+%%%%%%%%% Theorems
+\theoremstyle{plain}
+\newtheorem{prop}{Proposition}
+
+\newtheorem{conj}[prop]{Conjecture}
+\newtheorem{coro}[prop]{Corollary}
+\newtheorem{lemm}[prop]{Lemma}
+\newtheorem{theo}[prop]{Theorem}
+
+\theoremstyle{definition}
+\newtheorem{exam}{Example}
+\newtheorem{defi}{Definition}
+\newtheorem{assu}{Assumption}
+\newtheorem{proo}{Proof}
+\newtheorem{model}{Model}
+
+\theoremstyle{remark}
+\newtheorem{comm}{Comment}
+\newtheorem{rema}{Remark}
+
+\title{}
+\author{}
+
+\date{Draft version \ifcase\month\or
+January\or February\or March\or April\or May\or June\or
+July\or August\or September\or October\or November\or December\fi \ \number%
+\year\ \  }
+
+
+\begin{document}
+
+\section{Single-Agent Markovian Persuasion Models}
+ 
+There is a hidden Markov state $S_t \in \mathcal S$ whose transition follows the
+time-homogeneous kernel
+$S_{t+1} \sim P(\cdot \mid S_t = s, A_t = a)$.
+The principal (sender) fully observes $S_t$ and commits to a signaling or recommendation policy $\pi$ that maps the state to a recommendation $R_t = \pi(S_t)$. The agent (receiver) does not observe $S_t$.  
+
+At each time $t$, the agent hold a belief $\mu_t \in \Delta(\mathcal S)$ about $S_t$, observe the recommendation $R_t$, and then choose an action $A_t$. The agent’s one-period payoff is given by a function $u(a,s)$ for $a \in \mathcal A$, $s \in \mathcal S$,
+and the principal’s one-period payoff is $v(A_t,S_t)$.
+Let $H_t$ denote the history observed by the agent up to time $t$ (e.g., past recommendations and realized outcomes), which induces the belief
+$\mu_t(\cdot) = \PP{S_t \in \cdot \cond H_t}$ under the announced policy. Consider the following three models that differ in how the agent uses information over time:
+\begin{itemize}
+\item The agent at time $t$ is a new, short-lived receiver who cares only about the current period.  Their prior is a fixed distribution $\mu$ that does not depend on $t$ or on $H_t$ (so effectively $\mu_t \equiv \mu$), and they choose
+\begin{equation}
+A_t \in \arg\max_{a \in \mathcal A} \EE[\mu]{v(a,S_t)\cond R_t}
+\end{equation}
+that maximizes only their current expected payoff. They do not track
+information over time and do not care about future rewards.  This
+corresponds to the standard ``short-lived receiver'' dynamic persuasion setup \citep{wu2022sequential}.
+\item The same agent is present over all periods and updates their belief $\mu_t$ from history: $\mu_t(\cdot) = \PP{S_t \in \cdot \cond H_t}$. However, at each time $t$ they still choose $A_t$ to maximize onluythe current expected payoff, i.e.,
+\begin{equation}
+A_t \in \arg\max_{a \in \mathcal A} \EE{v(a,S_t)\cond H_t, R_t},
+\end{equation}
+while how current action affects future information or future payoffs.
+In this sense the agent may track information over time (their belief $\mu_t$ changes with $H_t$), but their behavior is myopic: they never take actions purely to learn. This captures a long-lived agent who learns passively but does not engage in strategic exploration \citep{renault2017optimal,iyer2023markov,lehrer2021markovian}.
+\item The same agent is present over all periods, forms a belief
+$\mu_t(\cdot) = \PP{S_t \in \cdot \cond H_t}$, and cares about a discounted stream of payoffs
+\begin{equation}
+\EE{\sum_{k=t}^\infty \beta^{k-t} v(A_k,S_t)\cond H_t, R_t},
+\end{equation}
+for some $\beta \in (0,1)$, where the expectation is taken under the probability law induced by the
+transition kernel $P$, the principal’s signaling policy $\pi$, and the agent’s strategy.
+In this case it can be optimal for the agent to take actions that are suboptimal in the current period in order to improve future
+information and explore deliberately.
+\end{itemize}
+
+\newpage
+\section{Networked Markovian Persuasion with Myopic Agents}
+
+We now start with the first, simplest model and extend it to a population of agents on a network.  The Markov state is now a vector $S_t = (S_{1,t},\ldots,S_{n,t}) \in \mathcal S^n$,
+where $S_{i,t}$ describes the local state of region $i = 1,\ldots,n$.  The regions are connected by a graph $G=(V,E)$; we
+write $N(i)$ for the neighborhood of $i$ (e.g., $i$ together with
+its one-hop neighbors on the graph). The state still evolves according to a time-homogeneous transition kernel $S_{t+1} \sim P(\cdot \mid S_t = s, A_t = a)$,
+where $A_t = (A_{1,t},\ldots,A_{n,t})$ is the profile of actions taken by the agents in period $t$. We focus on the case with one representative agent per region and identify agent $i$ with region $i$. 
+The agent’s one-period conditional expected utility in region $i$ is given by a function $v_i : \mathcal A_i \times \mathcal S^{N(i)} \to \RR$, while the principal’s one-period conditional expected utility is the average utility across regions,
+\begin{equation}
+U(A_t,S_t) = \frac{1}{n} \sum_{i=1}^n v_i\p{A_{i,t}, S_{N(i),t}}.
+\end{equation}
+
+We impose the following locality assumption on rewards and dynamics. 
+This assumption says that, conditional on the current local environment around a region $i$, neither the instantaneous payoff nor the law of $S_{i,t+1}$ depends on what happens in distant parts of the network.  
+In particular, externalities and information propagate across the system only through the edges of $G$. This will potentially allow us to work with local posteriors over $S_{N(i),t}$ and to formulate the persuasion and incentive-compatibility constraints in terms of neighborhoods $N(i)$ rather than the full state $S_t$.  
+Such locality assumptions are reasonable in many applications where interactions are predominantly spatial or geographic, for example, ride-sharing platforms where waiting times and prices in an area depend mainly on nearby demand and supply, or epidemic and diffusion models where the state of a location next period depends on its own and its neighbors' states (add some references here). 
+
+\begin{assu}
+For each region $i$ there exists a neighborhood $N(i) \subseteq V$ such that:
+\begin{enumerate}
+\item The reward of agents in region $i$ depends only on local state in $N(i)$. In other words, for all $s \in \mathcal S^n$,
+\begin{equation}
+v_i(a_i,s) = v_i(a_i,s_{N(i)}).
+\end{equation}
+\item he next-period state of region $i$ depends on $(S_t,A_t)$ only through the local configuration $(S_{N(i),t},A_{N(i),t})$.  Formally, for all measurable $\mathcal S' \subseteq \mathcal S$,
+\begin{equation}
+\PP{S_{i,t+1} \in \mathcal S'\cond S_t = s, A_t = a} = 
+\PP{S_{i,t+1} \in \mathcal S'\cond S_t = s', A_t = a'}
+\end{equation}
+whenever $(s_{N(i)},a_{N(i)}) = (s'_{N(i)},a'_{N(i)})$.
+\end{enumerate}
+\end{assu}
+
+
+Throughout, the principal fully observes $S_t$ and commits to a (possibly randomized) recommendation policy $\pi: \mathcal S^n \to \Delta(\mathcal A_1 \times \cdots \times \mathcal A_n)$
+so that in period $t$ a recommendation profile
+$R_t = (R_{1,t},\ldots,R_{n,t}) \sim \pi(\cdot \cond S_t)$
+is drawn and privately communicated to the agents.  We again interpret $R_{i,t}$ as a direct recommendation for the action of agent $i$. All agents share a common prior $\mu$ over $S_t$ and know the policy $\pi$,
+but they do not observe $S_t$ or the recommendations sent to other agents.
+
+At each time $t$, agent $i$ observes
+their own recommendation $R_{i,t}$ and then chooses an action
+$A_{i,t} \in \mathcal A_i$ to maximize their current expected payoff:
+\begin{equation}
+A_{i,t}\cond R_{i,t}=r \in \arg\max_{a \in \mathcal A_i}
+  \EE[\mu]{u_i(a,S_t) \cond R_{i,t}=r },
+\end{equation}
+where the expectation is taken over the posterior distribution of $S_t$ given $R_{i,t}=r$.  
+By Bayes’ rule, this posterior is
+\begin{equation}
+\PP[\mu]{S_t = s \cond R_{i,t}=r}
+= \frac{\mu(s) \PP{R_{i,t}=r \cond S_t=s}}{\sum_{s' \in \mathcal S^n} \mu(s')\PP{R_{i,t}=r \cond S_t=s'}},
+\end{equation}
+where
+\begin{equation}
+\PP{R_{i,t}=r \cond S_t=s} = \sum_{r_{-i} \in \mathcal A_{-i}}\pi\p{(r,r_{-i}) \cond s }.
+\end{equation}
+
+Following the classic work of \cite{kamenica2011bayesian}, we describe feasible outcomes in terms of the induced distributions over states and recommendations.  
+For a given prior $\mu$ on $S_t$, and for each region $i$, we define the persuasion set
+$\mathcal P_i(\mu)$ as the set of probability measures
+$P \in \Delta(\mathcal S^n \times \mathcal A_i)$ such that the marginal of $P$ on $\mathcal S^n$ is $\mu$, and for every $a \in \mathcal A_i$ with $P(R_i = a) > 0$,
+\begin{equation}
+\EE{u_i(a,S_t) \cond R_i = a }
+\ge \EE{u_i(a',S_t) \cond R_i = a }
+\end{equation}
+for all $a' \in \mathcal A_i$.
+It is well known that, with Bayesian rational agents, any signaling policy is outcome-equivalent to a direct recommendation policy characterized by some $P \in \mathcal P_i(\mu)$.
+Hence it is without loss of generality to work directly with the
+persuasion set.
+
+\subsection{Learning the Optimal Persuasion Policy}
+
+
+\subsection{Local v.s. Global Policies}
+
+\begin{rema}
+Questions to think about:
+\begin{itemize}
+\item How is this different from simply treating $R_{i,t}$ as the action and running a vanilla policy learning algorithm?  
+Possible ans: once we change the recommendation rule, the agents may change how they react to signals, so the environment seen by the principal is no longer stable, and the usual guarantees for policy learning can break down.
+\item What happens if the prior $\mu$ is not observed?  
+In that case, the principal can no longer learn a policy $\pi$ as an explicit function of $\mu$. What can the principal do instead, and what additional regret is induced by not observing $\mu$?
+\item What if the prior $\mu_t$ varies over time (as in the second case in Section~1)? The persuasion set can still be defined in a similar way period by period, but finding the optimal policy becomes more complicated. It should be relatively straightforward to extend the analysis when $\mu_t$ is exogenous, but may require substantially more work when $\mu_t$ is endogenous and depends on past signals and actions.
+\end{itemize}
+\end{rema}
+
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
