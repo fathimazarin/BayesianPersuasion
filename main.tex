@@ -104,15 +104,14 @@ information and explore deliberately.
 \end{itemize}
 
 \newpage
-\section{Off-Policy Evaluation with Endogenous Belief}
+\section{Off-Policy Learning with Endogenous Belief}
 
 Consider an experiment in which the experimenter (principal) runs a micro-randomized
 experiment on a single user (agent) and collects a sequence of data
 \((S_t,R_t,Y_t)_{t\ge1}\) under an experimental recommendation policy \(\pi_0\).
 For example, on a short-video platform the experimenter can randomize how
-videos are highlighted to the user; in an online advertisement campaign, the experimenter can randomize how promotion emails are sent on each day.  The goal is to evaluate a target recommendation policy
-\(\pi : \mathcal S \to \Delta(\mathcal R)\) by its long-run average outcome for
-the principal.
+videos are highlighted to the user; in an online advertisement campaign, the experimenter can randomize how promotion emails are sent on each day.  The goal is to find a target recommendation policy
+\(\pi : \mathcal S \to \Delta(\mathcal R)\)  that optimizes the long-run average outcome for the principal.
 
 A common approach is to model the system as a (time-homogeneous) MDP: 
 conditionally on $(S_t,R_t)$, the next state is drawn as
@@ -123,7 +122,7 @@ equations to evaluate the long-run value of a target recommendation policy $\pi$
 
 Consider the case where the user has a (potentially unobserved, misspecified, and endogenous) belief $\mu_t \in \Delta(\mathcal S)$ about the current state $S_t$.
 Rather than always following the recommendation, the user first updates their belief after observing $R_t$, and then chooses an action that maximizes their own one-period utility $v(a,S_t)$.  In particular, if the
-recommendation policy $\pi$ is public,\footnote{In practice, the users only track information over a subset $\mathcal S'\subseteq \mathcal S$, in which case the computation below is then ...} the posterior over
+recommendation policy $\pi$ is public,\footnote{In practice, users may track only a coarsened state $S_t' \in \mathcal S'$ and a belief $\mu_t'$ over $\mathcal S'$, rather than a full posterior over $\mathcal S$. The formula below then applies to $(S_t',\mu_t')$ with $\pi$ and $\mu_{t-1}$ replaced by their induced versions on $\mathcal S'$.} the posterior over
 $S_t$ given $R_t=r$ and prior $\mu_{t-1}$ is
 \begin{equation}
 \mu_{t}(s;r,\mu_{t-1}) = \PP{S_t=s \cond R_t=r,\mu_{t-1}}
@@ -150,7 +149,7 @@ Under some regularity assumptions (ergodic to be added), the stationary distribu
 Given $d_\pi$, the principal's stationary objective under policy $\pi$ can be written as
 \begin{equation}
 \EE[\pi]{u(A_t,S_t)}
-= \EE[R_t\sim\pi,(S_t,\mu_t)\sim d_\pi]{\EE[A_t\sim a^*(R_t,\mu_t)]{u(A_t,S_t)\cond R_t,S_t} },
+= \EE[(S_t,\mu_t)\sim d_\pi]{\EE[A_t\sim a^*(\mu_t)]{u(A_t,S_t)\cond S_t, \mu_t} },
 \end{equation}
 Thus, the principal's value under a policy $\pi$ depends not only on the transition kernel for $S_t$ but also on the endogenous belief process $\cb{\mu_t}$ and the user's best-response strategy. 
 Unless we impose the strong assumption that, for every $(s,r)$, the induced conditional distribution of the user’s action $\PP{A_t=a \cond S_t=s, R_t=r}$ is invariant across recommendation policies $\pi$, all conventional MDP approaches that treat $R_t$ as the action break down.
