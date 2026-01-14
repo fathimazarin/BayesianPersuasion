@@ -86,7 +86,7 @@ A_t \in \arg\max_{a \in \mathcal A} \EE[\mu]{v(a,S_t)\cond R_t}
 that maximizes only their current expected payoff. They do not track
 information over time and do not care about future rewards.  This
 corresponds to the standard ``short-lived receiver'' dynamic persuasion setup \citep{wu2022sequential}.
-\item The same agent is present over all periods and updates their belief $\mu_t$ from history: $\mu_t(\cdot) = \PP{S_t \in \cdot \cond H_t}$. However, at each time $t$ they still choose $A_t$ to maximize onluythe current expected payoff, i.e.,
+\item The same agent is present over all periods and updates their belief $\mu_t$ from history: $\mu_t(\cdot) = \PP{S_t \in \cdot \cond H_t}$. However, at each time $t$ they still choose $A_t$ to maximize only the current expected payoff, i.e.,
 \begin{equation}
 A_t \in \arg\max_{a \in \mathcal A} \EE{v(a,S_t)\cond H_t, R_t},
 \end{equation}
@@ -104,16 +104,73 @@ information and explore deliberately.
 \end{itemize}
 
 \newpage
+\section{Off-Policy Evaluation with Endogenous Belief}
+
+Consider an experiment in which the experimenter (principal) runs a micro-randomized
+experiment on a single user (agent) and collects a sequence of data
+\((S_t,R_t,Y_t)_{t\ge1}\) under an experimental recommendation policy \(\pi_0\).
+For example, on a short-video platform the experimenter can randomize how
+videos are highlighted to the user; in an online advertisement campaign, the experimenter can randomize how promotion emails are sent on each day.  The goal is to evaluate a target recommendation policy
+\(\pi : \mathcal S \to \Delta(\mathcal R)\) by its long-run average outcome for
+the principal.
+
+A common approach is to model the system as a (time-homogeneous) MDP: 
+conditionally on $(S_t,R_t)$, the next state is drawn as
+$S_{t+1} \sim P(\cdot \cond S_t = s, R_t = r)$.
+Conventional off-policy evaluation methods then treat $R_t$ as the
+action in this MDP and use importance weighting or Bellman
+equations to evaluate the long-run value of a target recommendation policy $\pi$.
+
+Consider the case where the user has a (potentially unobserved, misspecified, and endogenous) belief $\mu_t \in \Delta(\mathcal S)$ about the current state $S_t$.
+Rather than always following the recommendation, the user first updates their belief after observing $R_t$, and then chooses an action that maximizes their own one-period utility $v(a,S_t)$.  In particular, if the
+recommendation policy $\pi$ is public,\footnote{In practice, the users only track information over a subset $\mathcal S'\subseteq \mathcal S$, in which case the computation below is then ...} the posterior over
+$S_t$ given $R_t=r$ and prior $\mu_{t-1}$ is
+\begin{equation}
+\mu_{t}(s;r,\mu_{t-1}) = \PP{S_t=s \cond R_t=r,\mu_{t-1}}
+ =\frac{\pi(r \cond s)\mu_{t-1}(s)}{\sum_{s'} \pi(r \cond s')\,\mu_{t-1}(s')}
+\end{equation}
+The user then plays a myopic best response
+\begin{equation}
+a^*(\mu_t)
+\in \argmax_{a \in \mathcal A}
+\sum_{s\in\mathcal S} v(a,s)\,\mu_t(s;r,\mu_{t-1})
+\end{equation}
+
+Denote the principal's one-period payoff as $u(A_t,S_t)$, which depends on the state $S_t$ and the user's action $A_t$ (but not directly on
+$R_t$). As the users always update their belief according to the Bayes rule, the pair $(S_t,\mu_t)$ evolves as a time-homogeneous Markov chain:
+given $(S_t,\mu_t)$, the recommendation $R_t$ is drawn from
+$\pi(\cdot \cond S_t)$; the user responds with $A_t\sim a^*(R_t,\mu_t)$;
+the next state $S_{t+1}$ are drawn from the $P(\cdot\cond S_t,A_t)$;
+and the belief $\mu_{t+1}$ is updated deterministically from
+$(\mu_t,R_t,A_t)$ according to the user's learning rule. We denote by
+$d_\pi$ the stationary distribution of this Markov chain on
+$\mathcal S \times \Delta(\mathcal S)$.
+Under some regularity assumptions (ergodic to be added), the stationary distribution $d_\pi$ exists and is unique, and the long-run average payoff is well-defined and independent of the initial belief.
+
+Given $d_\pi$, the principal's stationary objective under policy $\pi$ can be written as
+\begin{equation}
+\EE[\pi]{u(A_t,S_t)}
+= \EE[R_t\sim\pi,(S_t,\mu_t)\sim d_\pi]{\EE[A_t\sim a^*(R_t,\mu_t)]{u(A_t,S_t)\cond R_t,S_t} },
+\end{equation}
+Thus, the principal's value under a policy $\pi$ depends not only on the transition kernel for $S_t$ but also on the endogenous belief process $\cb{\mu_t}$ and the user's best-response strategy. 
+Unless we impose the strong assumption that, for every $(s,r)$, the induced conditional distribution of the user’s action $\PP{A_t=a \cond S_t=s, R_t=r}$ is invariant across recommendation policies $\pi$, all conventional MDP approaches that treat $R_t$ as the action break down.
+
+\subsection{Persuasion Constraints with Persistent Agent}
+
+
+
+
+\newpage
 \section{Networked Markovian Persuasion with Myopic Agents}
 
 We now start with the first, simplest model and extend it to a population of agents on a network.  The Markov state is now a vector $S_t = (S_{1,t},\ldots,S_{n,t}) \in \mathcal S^n$,
 where $S_{i,t}$ describes the local state of region $i = 1,\ldots,n$.  The regions are connected by a graph $G=(V,E)$; we
 write $N(i)$ for the neighborhood of $i$ (e.g., $i$ together with
-its one-hop neighbors on the graph). The state still evolves according to a time-homogeneous transition kernel $S_{t+1} \sim P(\cdot \mid S_t = s, A_t = a)$,
+its one-hop neighbors on the graph). The state still evolves according to a time-homogeneous transition kernel $S_{t+1} \sim P(\cdot \cond S_t = s, A_t = a)$,
 where $A_t = (A_{1,t},\ldots,A_{n,t})$ is the profile of actions taken by the agents in period $t$. We focus on the case with one representative agent per region and identify agent $i$ with region $i$. 
-The agent’s one-period conditional expected utility in region $i$ is given by a function $v_i : \mathcal A_i \times \mathcal S^{N(i)} \to \RR$, while the principal’s one-period conditional expected utility is the average utility across regions,
+The agent’s one-period conditional expected utility in region $i$ is given by a function $v_i : \mathcal A_i \times \mathcal S \to \RR$, while the principal’s one-period conditional expected utility is the average utility across regions,
 \begin{equation}
-u(A_t,S_t) = \frac{1}{n} \sum_{i=1}^n v_i\p{A_{i,t}, S_{N(i),t}}.
+u(A_t,S_t) = \frac{1}{n} \sum_{i=1}^n v_i\p{A_{i,t}, S_{t}}.
 \end{equation}
 We focus on long-run performance in persistent systems such as revenue on ride-sharing platforms or disease control for epidemic mitigation. In such cases, the relevant KPIs are naturally per-period averages (e.g., average waiting time, match rate, or infection incidence). Accordingly, the principal evaluates a (stationary) recommendation policy $\pi$ by its stationary average utility
 \begin{equation}
