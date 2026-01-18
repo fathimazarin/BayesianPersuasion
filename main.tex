@@ -127,12 +127,13 @@ $S_t$ given $R_t=r$ and prior $\mu_{t-1}$ is
 \begin{equation}
 \mu_{t}(s;r,\mu_{t-1}) = \PP{S_t=s \cond R_t=r,\mu_{t-1}}
  =\frac{\pi(r \cond s)\mu_{t-1}(s)}{\sum_{s'} \pi(r \cond s')\,\mu_{t-1}(s')}
+ \label{eq:bayes_belief}
 \end{equation}
 The user then plays a myopic best response
 \begin{equation}
 a^*(\mu_t)
 \in \argmax_{a \in \mathcal A}
-\sum_{s\in\mathcal S} v(a,s)\,\mu_t(s;r,\mu_{t-1})
+\sum_{s\in\mathcal S} v(a,s)\,\mu_t(s)
 \end{equation}
 
 Denote the principal's one-period payoff as $u(A_t,S_t)$, which depends on the state $S_t$ and the user's action $A_t$ (but not directly on
@@ -154,7 +155,24 @@ Given $d_\pi$, the principal's stationary objective under policy $\pi$ can be wr
 Thus, the principal's value under a policy $\pi$ depends not only on the transition kernel for $S_t$ but also on the endogenous belief process $\cb{\mu_t}$ and the user's best-response strategy. 
 Unless we impose the strong assumption that, for every $(s,r)$, the induced conditional distribution of the user’s action $\PP{A_t=a \cond S_t=s, R_t=r}$ is invariant across recommendation policies $\pi$, all conventional MDP approaches that treat $R_t$ as the action break down.
 
-\subsection{Persuasion Constraints with Persistent Agent}
+\subsection{Identifying Policy Effect in Belief-Dependent Environments}
+
+To see how the existence of endogenous belief process makes generic off-policy learning fail even when belief is observed, let's start by considering the identification of off-policy value in such a belief-dependent environment. A key challenge is that the transition of the state $P_{\pi}(\cdot\cond S_t, \mu_t, R_t)$ now depends on the policy $\pi$ due to the endogenous belief update:
+\begin{equation*}
+P_{\pi}(S_{t+1}, \mu_{t+1}\cond S_t, \mu_t, R_t)
+= P_S(S_{t+1}\cond S_t, a^*(\mu_t))\cdot 
+I\cb{\mu_{t+1}(s) = \frac{\pi(R_t\cond s)\mu_t(s)}{\sum_{s'}\pi(R_t\cond s')\mu_t(s') },\forall s }
+\end{equation*}
+As a result, the usual off-policy identification argument, which assumes a single policy-invariant environment and only reweights using the state–action occupancy, breaks down.  In particular, to recover the value of a target policy $\pi$ from data collected under a logging policy $\pi_0$, we would need that every belief transition induced by $\pi$ can also arise under $\pi_0$. Fixing a prior $\mu_t$ and a realized recommendation $R_t$, this requires the posterior under $\pi$ to match the posterior under $\pi_0$:
+\begin{equation}
+\frac{\pi(R_t\cond s)\mu_t(s)}{\sum_{s'}\pi(R_t\cond s')\mu_t(s') }
+=
+\frac{\pi_0(R_t\cond s)\mu_t(s)}{\sum_{s'}\pi_0(R_t\cond s')\mu_t(s') },\qquad\forall s.
+\end{equation}
+When $\mu_t$ is a belief over the full state space, this equality forces $\pi(r\mid s)=\pi_0(r\mid s)$.  In other words, generic off-policy identification in this belief-dependent environment would require an overlap condition that is much stronger than the usual state–action overlap and is almost always violated.
+
+One way to weaken this requirement is to assume that the agent only tracks a coarsened state $B_t=g(S_t)$ and updates their belief on $B_t$ using aggregated likelihoods (so that the Bayes update depends on $\PP{R_t=r \cond B_t=b}$ rather than on $\PP{R_t=r\cond S_t=s}$).  In that case, off-policy identification is still only possible within a restricted class of target policies that are observationally equivalent at the level of the tracked state, in the sense that they induce the same likelihoods
+$\PP{R_t=r\mid B_t=b}$ as the logging policy. Outside of such restricted classes, the policy dependence of the belief dynamics implies that standard MDP-based OPE methods, which rely on a policy-invariant transition kernel, are misspecified in this setting.
 
 
 
@@ -217,25 +235,6 @@ for all $a' \in \mathcal A_i$.
 It is well known that, with Bayesian rational agents, any signaling policy is outcome-equivalent to a direct recommendation policy characterized by some $P \in \mathcal P_i(\mu)$.
 Hence it is without loss of generality to work directly with the
 persuasion set.
-
-\subsection{Learning the Optimal Persuasion Policy}
-
-In practice, the principal rarely knows the environment (e.g., transition kernel and utilities) exactly.
-What the principal does have is a long log of past interactions generated under some baseline recommendation policy $\pi_0$.
-This naturally leads to an off-policy learning viewpoint: given logged data from $\pi_0$, can we learn a new stationary recommendation policy $\pi$ that achieves higher stationary average utility $U(\pi)$ while preserving incentive compatibility?
-
-To understand what the learning algorithm should aim for, it is useful to first ask: if we did know the environment,
-how would we compute an optimal persuasion policy?
-
-
-
-\begin{rema}
-With the off-policy learning formulation, it might be tempting to simply collapse the agent incentive layer and treat the recommendation $R_t$ as the action directly. In that view, the problem reduces to finding a policy $R_t \sim \pi(\cdot \cond S_t)$ that maximizes the long-run value of a reduced MDP with state $S_t$ and action $R_t$. One could write the reward in reduced form as 
-\begin{equation}
-\EE[\pi]{u'_{\pi}(r,s)} = \EE[\pi]{\EE[\pi]{u(A,S)\cond S,R}\cond S=s,R=r}
-\end{equation}
-However, this collapsed representation hides an important dependence on the policy $\pi$. The conditional distribution of actions, $A_t\cond (S_t, R_t)$, is generated by agents' best responses to the posterior $\PP{S_t\cond R_t}$, and this posterior itself depends on the global recommendation rule $\pi$ via Bayes' rule. As a consequence, the reduced-form reward $u'_\pi$ is not a fixed function of $(s,r)$ that is invariant across policies, and the collapsed off-policy learning approach is only valid under a strong invariance assumption that the conditional law $A_t\cond (S_t, R_t)$ must be the same for all policies $\pi$ under consideration.
-\end{rema}
 
 \begin{rema}
 Questions to think about:
