@@ -209,33 +209,47 @@ At each time $t$, agent $i$ observes
 their own recommendation $R_{i,t}$ and then chooses an action
 $A_{i,t} \in \mathcal A_i$ to maximize their current expected payoff:
 \begin{equation}
-A_{i,t}\cond R_{i,t}=r \in \arg\max_{a \in \mathcal A_i}
-  \EE[\mu]{u_i(a,S_t) \cond R_{i,t}=r },
+A_{i,t}\cond R_{i,t}=r_i \in \arg\max_{a_i \in \mathcal A_i}
+  \EE[\mu]{u_i(a_i,S_t) \cond R_{i,t}=r_i },
 \end{equation}
-where the expectation is taken over the posterior distribution of $S_t$ given $R_{i,t}=r$.  
+where the expectation is taken over the posterior distribution of $S_t$ given $R_{i,t}=r_i$.  
 By Bayes’ rule, this posterior is
 \begin{equation}
-\PP[\mu]{S_t = s \cond R_{i,t}=r}
-= \frac{\mu(s) \PP{R_{i,t}=r \cond S_t=s}}{\sum_{s' \in \mathcal S^n} \mu(s')\PP{R_{i,t}=r \cond S_t=s'}},
+\PP[\mu]{S_t = s \cond R_{i,t}=r_i}
+= \frac{\mu(s) \PP{R_{i,t}=r_i \cond S_t=s}}{\sum_{s' \in \mathcal S^n} \mu(s')\PP{R_{i,t}=r_i \cond S_t=s'}},
 \end{equation}
 where
 \begin{equation}
-\PP{R_{i,t}=r \cond S_t=s} = \sum_{r_{-i} \in \mathcal A_{-i}}\pi\p{(r,r_{-i}) \cond s }.
+\PP{R_{i,t}=r_i \cond S_t=s} = \sum_{r_{-i} \in \mathcal A_{-i}}\pi\p{(r_i,r_{-i}) \cond s }.
 \end{equation}
 
 Following the classic work of \cite{kamenica2011bayesian}, we describe feasible outcomes in terms of the induced distributions over states and recommendations.  
 For a given prior $\mu$ on $S_t$, and for each region $i$, we define the persuasion set
 $\mathcal P_i(\mu)$ as the set of probability measures
-$P \in \Delta(\mathcal S^n \times \mathcal A_i)$ such that the marginal of $P$ on $\mathcal S^n$ is $\mu$, and for every $a \in \mathcal A_i$ with $P(R_i = a) > 0$,
+$P \in \Delta(\mathcal S^n \times \mathcal A_i)$ such that the marginal of $P$ on $\mathcal S^n$ is $\mu$, and for every $a_i \in \mathcal A_i$ with $P(R_i = a_i) > 0$,
 \begin{equation}
-\EE[\mu]{v_i(a,S_t) \cond R_{i,t} = a }
-\ge \EE[\mu]{v_i(a',S_t) \cond R_{i,t} = a }
+\EE[\mu]{v_i(a_i,S_t) \cond R_{i,t} = a_i }
+\ge \EE[\mu]{v_i(a_i',S_t) \cond R_{i,t} = a_i }
 \end{equation}
-for all $a' \in \mathcal A_i$.
+for all $a_i' \in \mathcal A_i$.
 It is well known that, with Bayesian rational agents, any signaling policy is outcome-equivalent to a direct recommendation policy characterized by some $P \in \mathcal P_i(\mu)$.
 Hence it is without loss of generality to work directly with the
 persuasion set.
 
+A natural choice of prior $\mu$ is the stationary distribution $d_\pi$ of $S_t$ induced by the recommendation policy $\pi$. This mirrors the classic Bayesian persuasion framework, where the sender observes a realized state drawn from a common prior; the difference in our dynamic setting is that this common prior is itself determined by the policy $\pi$. 
+We interpret this formulation as targeting long-run performance: once the system has mixed, agents have learned the steady-state distribution of the state under $\pi$, but in each period they don't observe the realized state.\footnote{Another interesting setting is when agents only observe their own realized local state, but not the states of their neighbors, so the principal’s signal nudges their beliefs about the global state of the system.} They are thus Bayesian with prior $d_\pi$ and update their beliefs about the current state using the principal's recommendation, exactly as in the static persuasion model. The policy learning problem can then be summarized as the following optimization problem of finding the optimal occupancy measure $\gamma(a,s) = d_\pi(s)\pi(a\cond s)$ that maximizes long-term performance subject to incentive constraints:
+\begin{equation*}
+\begin{split}
+\max_{\gamma} &\sum_{a,s} \p{\frac{1}{n}\sum_i v_i(a_i,s)} \gamma(a,s)\\
+\text{s.t.} &\sum_s v_i(a_i,s)\sum_{a_{-i}}\gamma((a_i,a_{-i}),s)
+\ge \sum_s v_i(a_i',s)\sum_{a_{-i}}\gamma((a_i,a_{-i}),s),\\ 
+&\qquad\qquad\qquad\qquad\qquad\qquad\forall i, \forall a_i', \forall a_i \text{ with } \sum_{s,a_{-i}}\gamma((a_i,a_{-i}),s)>0,\\
+& \sum_{a,s} \gamma(a,s)=1,\qquad \gamma(a,s)\ge 0,\qquad \forall a,\forall s\\
+& \sum_{a,s} \gamma(a,s)P(s'\cond s,a) = \sum_a \gamma(a,s'),\qquad\forall s'.
+\end{split}
+\end{equation*}
+
+\iffalse
 \begin{rema}
 Questions to think about:
 \begin{itemize}
@@ -244,6 +258,7 @@ In that case, it is unclear what the persuasion set is. (i) assume $\mu$ is comm
 \item What if the prior $\mu_t$ varies over time (as in the second case in Section~1)? The persuasion set can still be defined in a similar way period by period, but finding the optimal policy becomes more complicated. might be straightforward to extend the analysis when $\mu_t$ is exogenous, but may require substantially more work when $\mu_t$ is endogenous and depends on past signals and actions.
 \end{itemize}
 \end{rema}
+\fi
 
 \subsection{Local v.s. Global Policies}
 
@@ -259,14 +274,44 @@ For each region $i$ there exists a neighborhood $N(i) \subseteq V$ such that:
 \begin{equation}
 v_i(a_i,s) = v_i(a_i,s_{N(i)}).
 \end{equation}
-\item he next-period state of region $i$ depends on $(S_t,A_t)$ only through the local configuration $(S_{N(i),t},A_{N(i),t})$.  Formally, for all measurable $\mathcal S' \subseteq \mathcal S$,
+\item The next-period state of region $i$ depends on $(S_t,A_t)$ only through the local configuration $(S_{N(i),t},A_{N(i),t})$.  Formally, for all measurable $\mathcal S' \subseteq \mathcal S$,
 \begin{equation}
 \PP{S_{i,t+1} \in \mathcal S'\cond S_t = s, A_t = a} = 
 \PP{S_{i,t+1} \in \mathcal S'\cond S_t = s', A_t = a'}
 \end{equation}
 whenever $(s_{N(i)},a_{N(i)}) = (s'_{N(i)},a'_{N(i)})$.
 \end{enumerate}
+\label{assu:local}
 \end{assu}
+
+However, even if one-step rewards and transitions are local, under a stationary policy the stationary distribution of $S_t$ can have long-range correlations, because local interactions propagate over time. We therefore need a mixing assumption to ensure that an approximate local law is close to the true local law.
+
+Formally, consider the utility function $U(\pi)$. Under Assumption \ref{assu:local}, with a global policy $\pi$,
+\begin{equation}
+U(\pi)=
+\frac{1}{n}\sum_i\sum_{a_i,s_{N(i)}} v_i(a_i,s_{N(i)}) \Gamma_{i,\pi}(a_i,s_{N(i)}),
+\end{equation}
+where
+\begin{equation}
+\Gamma_{i,\pi}(a_i,s_{N(i)})
+=\sum_{a_{-i},s_{-N(i)}} \gamma_\pi(a,s)
+\end{equation}
+Now consider a set of local policies $\cb{\tilde \pi_i}$ that sets
+\begin{equation}
+\tilde \pi_i(a_i\cond s_{N(i)}) = \EE{\pi(a_i\cond s_{N(i)},S_{-N(i)})}
+\end{equation}
+so that under $\gamma_\pi$ the conditional distribution of $A_i$ given $s_{N(i)}$ is the same under $\pi$ and $\tilde\pi$.
+We need a mixing assumption under which
+\begin{equation}
+\Gamma_{i,\pi}(a_i,s_{N(i)}) \approx \Gamma_{i,\tilde\pi}(a_i,s_{N(i)})
+\end{equation}
+for all $i$, $a_i$, $s_{N(i)}$. Under this assumption, the value $U(\tilde \pi)$ is close to $U(\pi)$, so so restricting attention to local policies incurs only a small regret in the objective.
+Similarly, using the same notation, we can write the IC constraints as
+\begin{equation}
+\sum_s v_i(a_i,s_{N(i)})\Gamma_{i,\pi}(a_i,s_{N(i)})
+\ge \sum_s v_i(a_i',s_{N(i)})\Gamma_{i,\pi}(a_i,s_{N(i)}).
+\end{equation}
+Then, under the mixing assumption, and if $v_i$ is bounded a.s., both the objective and each side of the IC inequalities change only by a small amount when we replace the global policy $\pi$ by its local counterpart $\tilde\pi$. Thus restricting attention to local policies leads to at most a small loss in both feasibility and performance.\footnote{We also need to handle the stationarity constraint. This requires that the learned local measures are consistent with the local dynamics induced by $\pi$ and that, whenever two neighborhoods overlap, their marginals on the overlap coincide.}
 
 
 \bibliographystyle{plainnat}
